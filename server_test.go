@@ -19,7 +19,7 @@ import (
 	"testing"
 	_ "unsafe" // for go:linkname
 
-	"github.com/gobwas/httphead"
+	"github.com/marks12/httphead"
 )
 
 // TODO(gobwas): upgradeGenericCase with methods like configureUpgrader,

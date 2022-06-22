@@ -7,7 +7,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"github.com/gobwas/ws"
+	"github.com/marks12/ws"
 )
 
 // TODO(gobwas): test continuation discard.

@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gobwas/httphead"
+	"github.com/marks12/httphead"
 )
 
 func TestDialerRequest(t *testing.T) {

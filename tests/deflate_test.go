@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gobwas/httphead"
-	"github.com/gobwas/ws"
-	"github.com/gobwas/ws/wsflate"
-	"github.com/gobwas/ws/wsutil"
+	"github.com/marks12/httphead"
+	"github.com/marks12/ws"
+	"github.com/marks12/ws/wsflate"
+	"github.com/marks12/ws/wsutil"
 )
 
 func TestFlateClientServer(t *testing.T) {

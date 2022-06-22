@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gobwas/httphead"
-	"github.com/gobwas/pool/pbufio"
+	"github.com/marks12/httphead"
+	"github.com/marks12/pool/pbufio"
 )
 
 // Constants used by ConnUpgrader.

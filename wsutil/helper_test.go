@@ -5,7 +5,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/gobwas/ws"
+	"github.com/marks12/ws"
 )
 
 func TestReadMessageEOF(t *testing.T) {

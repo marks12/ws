@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/gobwas/httphead"
+	"github.com/marks12/httphead"
 )
 
 type httpVersionCase struct {

@@ -10,7 +10,7 @@ import (
 	"testing"
 	"unsafe"
 
-	"github.com/gobwas/ws"
+	"github.com/marks12/ws"
 )
 
 // TODO(gobwas): test NewWriterSize on edge cases for offset.

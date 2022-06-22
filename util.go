@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"unsafe"
 
-	"github.com/gobwas/httphead"
+	"github.com/marks12/httphead"
 )
 
 // SelectFromSlice creates accept function that could be used as Protocol/Extension

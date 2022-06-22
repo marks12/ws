@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/gobwas/httphead"
+	"github.com/marks12/httphead"
 )
 
 const (

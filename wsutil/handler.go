@@ -49,7 +49,7 @@ type ControlHandler struct {
 // header could not be handled.
 var ErrNotControlFrame = errors.New("not a control frame")
 
-// Handle handles control framse regarding to the c.State and writes responses
+// Handle handles control frames regarding to the c.State and writes responses
 // to the c.Dst when needed.
 //
 // It returns ErrNotControlFrame when given header is not of ws.OpClose,
@@ -194,7 +194,7 @@ func (c ControlHandler) HandleClose(h ws.Header) error {
 	// If an endpoint receives a Close frame and did not previously
 	// send a Close frame, the endpoint MUST send a Close frame in
 	// response. (When sending a Close frame in response, the endpoint
-	// typically echos the status code it received.)
+	// typically echoes the status code it received.)
 	_, err := w.Write(p[:2])
 	if err != nil {
 		return err

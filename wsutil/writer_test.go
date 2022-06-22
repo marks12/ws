@@ -2,6 +2,7 @@ package wsutil
 
 import (
 	"bytes"
+	"crypto/rand"
 	"fmt"
 	"io"
 	"reflect"
@@ -356,6 +357,115 @@ func TestWriter(t *testing.T) {
 	}
 }
 
+func TestWriterLargeWrite(t *testing.T) {
+	var dest bytes.Buffer
+	w := NewWriterSize(&dest, 0, 0, 16)
+
+	// Test that even for big writes extensions set their bits.
+	var rsv = [3]bool{true, true, false}
+	w.SetExtensions(SendExtensionFunc(func(h ws.Header) (ws.Header, error) {
+		h.Rsv = ws.Rsv(rsv[0], rsv[1], rsv[2])
+		return h, nil
+	}))
+
+	// Write message with size twice bigger than writer's internal buffer.
+	// We expect Writer to write it directly without buffering since we didn't
+	// write anything before (no data in internal buffer).
+	bts := make([]byte, 2*w.Size())
+	if _, err := w.Write(bts); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Flush(); err != nil {
+		t.Fatal(err)
+	}
+
+	frame, err := ws.ReadFrame(&dest)
+	if err != nil {
+		t.Fatalf("can't read frame: %v", err)
+	}
+
+	var act [3]bool
+	act[0], act[1], act[2] = ws.RsvBits(frame.Header.Rsv)
+	if act != rsv {
+		t.Fatalf("unexpected rsv bits sent: %v; extension set %v", act, rsv)
+	}
+}
+
+func TestWriterGrow(t *testing.T) {
+	for _, test := range []struct {
+		name     string
+		dataSize int
+		numWrite int
+	}{
+		{
+			name:     "buffer grow leads to its reduce",
+			dataSize: 20,
+		},
+		{
+			name:     "header size increases",
+			dataSize: int(len16) + 10,
+		},
+		{
+			name:     "split case for header offset",
+			dataSize: int(len7),
+		},
+		{
+			name:     "calculate header size from the payload instead of the whole buffer",
+			dataSize: int(len7/2 + 2),
+			numWrite: 2,
+		},
+		{
+			name:     "shift current buffer when header size increase",
+			dataSize: int(len7 - 2),
+			numWrite: 2,
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			var dest bytes.Buffer
+			w := NewWriterSize(&dest, 0, 0, 16)
+			w.DisableFlush()
+
+			// Test that even for big writes extensions set their bits.
+			var rsv = [3]bool{true, true, false}
+			w.SetExtensions(SendExtensionFunc(func(h ws.Header) (ws.Header, error) {
+				h.Rsv = ws.Rsv(rsv[0], rsv[1], rsv[2])
+				return h, nil
+			}))
+
+			bts := make([]byte, test.dataSize)
+			if _, err := rand.Read(bts); err != nil {
+				t.Fatal(err)
+			}
+			if test.numWrite == 0 {
+				test.numWrite = 1
+			}
+			err := chunks(bts, test.numWrite, func(p []byte) error {
+				_, err := w.Write(p)
+				return err
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := w.Flush(); err != nil {
+				t.Fatal(err)
+			}
+
+			frame, err := ws.ReadFrame(&dest)
+			if err != nil {
+				t.Fatalf("can't read frame: %v", err)
+			}
+			var act [3]bool
+			act[0], act[1], act[2] = ws.RsvBits(frame.Header.Rsv)
+			if act != rsv {
+				t.Fatalf("unexpected rsv bits sent: %v; extension set %v", act, rsv)
+			}
+			if !bytes.Equal(frame.Payload, bts) {
+				t.Errorf("wrote frames:\nact:\t%x\nexp:\t%x\n", frame.Payload, bts)
+			}
+		})
+	}
+}
+
 func TestWriterReadFrom(t *testing.T) {
 	for i, test := range []struct {
 		label string
@@ -511,7 +621,7 @@ func frames(p []byte) (ret []ws.Frame) {
 func pretty(f ...ws.Frame) string {
 	str := "\n"
 	for _, f := range f {
-		str += fmt.Sprintf("\t%#v\n\t%#x (%s)\n\t----\n", f.Header, f.Payload, f.Payload)
+		str += fmt.Sprintf("\t%#v\n\t%#x (%#q)\n\t----\n", f.Header, f.Payload, f.Payload)
 	}
 	return str
 }
@@ -537,3 +647,20 @@ func omitMasks(f []ws.Frame) []ws.Frame {
 }
 
 func bts(b ...[]byte) [][]byte { return b }
+
+func chunks(p []byte, n int, fn func(p []byte) error) error {
+	if len(p) < n {
+		panic("buffer is smaller than requested number of chunks")
+	}
+	step := len(p) / n
+	for pos, i := 0, 0; i < len(p)/step; pos, i = pos+step, i+1 {
+		if i == n-1 {
+			// Last iteration.
+			step += len(p) % n
+		}
+		if err := fn(p[pos : pos+step]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
